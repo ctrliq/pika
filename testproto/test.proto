@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.ciq.dev/pika/testproto;pikatestpb";
+
+message Simple1 {
+  string name = 1;
+}
+
+message SimpleWrappers2 {
+  google.protobuf.StringValue name = 1;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_OK = 1;
+  STATUS_ERROR = 2;
+  STATUS_CANCELED = 3;
+  STATUS_TEST2 = 4;
+  STATUS_TEST3 = 5;
+  STATUS_TEST4 = 6;
+}
+
+message Complete3 {
+  string str = 1;
+  google.protobuf.Int32Value nullable_int = 2;
+  google.protobuf.BoolValue nullable_bool = 3;
+  bool bool = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  Status status = 6;
+  repeated string strs = 7;
+}
