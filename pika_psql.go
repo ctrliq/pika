@@ -1,16 +1,5 @@
-// Copyright (c) 2023 Ctrl IQ, Inc. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-FileCopyrightText: Copyright (c) 2023, CIQ, Inc. All rights reserved
+// SPDX-License-Identifier: Apache-2.0
 
 package pika
 
@@ -27,11 +16,14 @@ import (
 	"github.com/pkg/errors"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 
+	// load psql driver
 	_ "github.com/lib/pq"
 )
 
 // Queryable includes all methods shared by sqlx.DB and sqlx.Tx, allowing
 // either type to be used interchangeably.
+//
+//nolint:interfacebloat
 type Queryable interface {
 	sqlx.Ext
 	sqlx.ExecerContext
@@ -56,8 +48,10 @@ type Queryable interface {
 	NamedQuery(string, interface{}) (*sqlx.Rows, error)
 }
 
-var _ Queryable = (*sqlx.DB)(nil)
-var _ Queryable = (*sqlx.Tx)(nil)
+var (
+	_ Queryable = (*sqlx.DB)(nil)
+	_ Queryable = (*sqlx.Tx)(nil)
+)
 
 type PostgreSQL struct {
 	*connBase
@@ -69,6 +63,7 @@ type basePsql[T any] struct {
 	*AIPFilter[T]
 	*PageToken[T]
 	*base
+	//nolint:structcheck // false positive
 	psql *PostgreSQL
 }
 
@@ -763,7 +758,7 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 
 				// kWrapper is whether to wrap the key in a function
 				// Mostly used for ANY and ALL when checking array columns
-				kWrapper := ""
+				keyWrapper := ""
 
 				k := pair.Key
 				v := pair.Value
@@ -811,11 +806,10 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 								if strings.HasPrefix(x, "pq.") && strings.HasSuffix(x, "Array") {
 									v = origV
 									shouldSwitchKV = true
-									kWrapper = "ANY"
+									keyWrapper = "ANY"
 								}
 							}
 						}
-
 					}
 
 					// NOT IN requires the value wrapped in ALL
@@ -833,11 +827,10 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 								if strings.HasPrefix(x, "pq.") && strings.HasSuffix(x, "Array") {
 									v = origV
 									shouldSwitchKV = true
-									kWrapper = "ALL"
+									keyWrapper = "ALL"
 								}
 							}
 						}
-
 					}
 
 					// If LIKE or NOT LIKE, then respect wildcards
@@ -901,8 +894,8 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 				}
 
 				finalK := fmt.Sprintf("\"%s\".\"%s\"", b.metadata[pikaMetadataModelName], cleanKey(k))
-				if kWrapper != "" {
-					finalK = fmt.Sprintf("%s(%s)", kWrapper, finalK)
+				if keyWrapper != "" {
+					finalK = fmt.Sprintf("%s(%s)", keyWrapper, finalK)
 				}
 
 				if shouldSwitchKV {
@@ -1074,7 +1067,7 @@ func (b *basePsql[T]) psqlSelectList(excludeColumns []string, includeColumns []s
 					// Need to replace fields from other tables with associated model prefixs
 					// These fields are defined in the current model, but their values are from other tables
 					selectColumns = append(selectColumns, fmt.Sprintf("\"%s\".\"%s\"", val.modelName, column.db))
-					// If table and model names do NOT exist in joins, we need to add them to from str separatedly
+					// If table and model names do NOT exist in joins, we need to add them to from str separately
 					// Otherwise, models definitions are missing in the generated query
 					if !b.checkJoins(val.tableName, val.modelName) {
 						fromStrs = append(fromStrs, fmt.Sprintf("\"%s\" \"%s\"", val.tableName, val.modelName))
@@ -1348,7 +1341,7 @@ func getSubQuery(val interface{}) (string, *orderedmap.OrderedMap[string, interf
 	return "", nil
 }
 
-// Retreive the table and module name of given struct
+// Retrieve the table and module name of given struct
 func getQuerySetInfo(val interface{}) (string, string) {
 	if isTarget(val) {
 		ref := reflect.ValueOf(val)
@@ -1385,6 +1378,8 @@ func isTarget(val interface{}) bool {
 }
 
 // Replace the old place holder with new ones
+//
+//nolint:predeclared
 func replacePlaceHolder(query string, old, new []int) string {
 	if len(old) != len(new) {
 		return query

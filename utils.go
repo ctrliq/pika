@@ -1,16 +1,5 @@
-// Copyright (c) 2023 Ctrl IQ, Inc. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-FileCopyrightText: Copyright (c) 2023, CIQ, Inc. All rights reserved
+// SPDX-License-Identifier: Apache-2.0
 
 package pika
 
@@ -149,6 +138,7 @@ var (
 	}
 )
 
+//nolint:gochecknoinits
 func init() {
 	logger = logrus.New()
 
@@ -181,6 +171,7 @@ type pikaFiltering struct {
 	innerOr bool
 }
 
+//nolint:structcheck
 type base struct {
 	filters        []pikaFiltering
 	args           *orderedmap.OrderedMap[string, interface{}]
@@ -323,19 +314,19 @@ func getPikaMetadata[T any]() map[string]string {
 				metadata[field.Name] = tag
 			}
 			continue
-		} else {
-			// This is a regular field, let's store information about it's type
-			tag := field.Tag.Get("db")
-			if tag == "" {
-				continue
-			}
-
-			if _, ok := metadata[field.Name]; ok {
-				panic(fmt.Sprintf("duplicate Pika database field: %s", field.Name))
-			}
-
-			metadata[tag] = field.Type.String()
 		}
+
+		// This is a regular field, let's store information about it's type
+		tag := field.Tag.Get("db")
+		if tag == "" {
+			continue
+		}
+
+		if _, ok := metadata[field.Name]; ok {
+			panic(fmt.Sprintf("duplicate Pika database field: %s", field.Name))
+		}
+
+		metadata[tag] = field.Type.String()
 	}
 
 	return metadata

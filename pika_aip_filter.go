@@ -1,24 +1,14 @@
-// Copyright (c) 2023 Ctrl IQ, Inc. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-FileCopyrightText: Copyright (c) 2023, CIQ, Inc. All rights reserved
+// SPDX-License-Identifier: Apache-2.0
 
 package pika
 
 import (
 	"fmt"
-	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"strconv"
 	"strings"
+
+	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 
 	"github.com/pkg/errors"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -233,13 +223,12 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 
 				states = append(states, innerState)
 				i++
-				continue
 			} else {
 				activeState.activeParens = true
 				activeState.initParens = false
 				activeState.forceNot = activeState.activeNot
-				continue
 			}
+			continue
 		// Right parenthesis.
 		// Closing previous parenthesis.
 		case parser.FilterLexerRPAREN:
@@ -461,9 +450,8 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 			if activeState.activeIdentifier == "" {
 				activeState.activeIdentifier = t.GetText()
 				continue
-			} else {
-				return nil, fmt.Errorf("unexpected identifier %s", t.GetText())
 			}
+			return nil, fmt.Errorf("unexpected identifier %s", t.GetText())
 		}
 
 		if activeState.activeOperator != "" && activeState.activeIdentifier != "" && activeState.activeValue != nil {

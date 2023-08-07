@@ -1,0 +1,58 @@
+run:
+  skip-files:
+    - _test.go
+linters:
+  enable-all: true
+  disable:
+    - maligned
+    - interfacer
+    - scopelint # deprecated
+    - golint # deprecated
+    - dupl
+    - funlen
+    - gomnd
+    - lll
+    - gochecknoglobals
+    - varnamelen
+    - ireturn
+    - gomoddirectives
+    - godox
+    - gocyclo
+    - exhaustivestruct
+    - exhaustruct
+    - tagliatelle
+    - wsl
+    - forbidigo
+    - makezero
+    - depguard
+    - wrapcheck # will fix later
+    - gocritic # does not like log.Fatal with defers
+    - gci # collides with other linters
+    - godot # comments ending in periods...
+    - cyclop # like gocyclo
+    - gocognit # like cyclop
+    - maintidx # another complexity one
+    - goerr113 # wants static errors for all non-formatted error returns
+    - errname # base error naming
+    - nilnil # inconsistent error returns
+    - prealloc # wants to declaring vars with := struct{}
+    - ifshort # if blocks could be inlined
+    - nlreturn # wants newline before return, break, and continue (dont want newline before break & continue)
+    - exhaustive # some missing switch statements
+    - nestif # nested if blocks, complexity issues    
+    - forcetypeassert # missing some checks, lots of false errors
+    - containedctx # some contexts embedded in structs
+    - contextcheck # probably worth looking at
+    - wastedassign # some interesting assignments, does not like declaring new vars like := ""
+    - promlinter # some observability stuff
+    - nonamedreturns
+    - nosnakecase # disbaled because of too many false positives due to protobuf types
+
+linters-settings:
+  goheader:
+    values:
+      const:
+        COMPANY: CIQ, Inc
+    template: |-
+      SPDX-FileCopyrightText: Copyright (c) {{ YEAR-RANGE }}, {{ COMPANY }}. All rights reserved
+      SPDX-License-Identifier: Apache-2.0
