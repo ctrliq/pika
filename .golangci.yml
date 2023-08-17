@@ -52,7 +52,7 @@ linters-settings:
   goheader:
     values:
       const:
-        COMPANY: CIQ, Inc
+        COMPANY: Ctrl IQ, Inc
     template: |-
       SPDX-FileCopyrightText: Copyright (c) {{ YEAR-RANGE }}, {{ COMPANY }}. All rights reserved
       SPDX-License-Identifier: Apache-2.0
