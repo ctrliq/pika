@@ -893,7 +893,19 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 					}
 				}
 
-				finalK := fmt.Sprintf("\"%s\".\"%s\"", b.metadata[pikaMetadataModelName], cleanKey(k))
+				clean := cleanKey(k)
+				finalK := fmt.Sprintf("\"%s\".\"%s\"", b.metadata[pikaMetadataModelName], clean)
+				// If there is a dot in cleanKey, then that means we should assume that
+				// the caller "knows" what they're doing and we should not add the table name
+				if strings.Contains(clean, ".") {
+					// Split by dot, then join with quotes
+					parts := strings.Split(clean, ".")
+					if len(parts) != 2 {
+						b.err = fmt.Errorf("invalid key: %s", k)
+						return "", nil
+					}
+					finalK = fmt.Sprintf("\"%s\".\"%s\"", parts[0], parts[1])
+				}
 				if keyWrapper != "" {
 					finalK = fmt.Sprintf("%s(%s)", keyWrapper, finalK)
 				}

@@ -1623,3 +1623,24 @@ func TestComplexSubQuery(t *testing.T) {
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
 }
+
+func TestJoinFilter1(t *testing.T) {
+	psql := newPsql(t)
+	createSimpleJoinModel(t, psql)
+
+	qs := Q[joinSimpleModelMain](psql)
+	args := NewArgs()
+	args.Set("id", int32(1))
+	qs = qs.InnerJoin(nil, joinModelForeign{}, "id", "foreign_key").Filter("joinModelForeign.id=:id").Args(args)
+
+	expectedQuery := `SELECT "joinSimpleModelMain"."id", "joinSimpleModelMain"."name", "joinModelForeign"."id" FROM "join_simple_model_main" "joinSimpleModelMain" INNER JOIN "join_model_foreign" "joinModelForeign" ON "joinSimpleModelMain"."id" = "joinModelForeign"."foreign_key" WHERE ("joinModelForeign"."id" = $1)`
+	expectedArgs := []interface{}{int32(1)}
+	actualQuery, actualArgs := qs.AllQuery()
+	require.Equal(t, expectedQuery, actualQuery)
+	require.Equal(t, expectedArgs, actualArgs)
+
+	ret, err := qs.Get()
+	require.Equal(t, err, nil)
+	require.NotNil(t, ret)
+	require.Equal(t, ret.ID, 1)
+}
