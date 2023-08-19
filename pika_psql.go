@@ -395,7 +395,10 @@ func (b *basePsql[T]) Count() (int, error) {
 	b.ignoreLimit = true
 	b.ignoreOffset = true
 	b.ignoreOrderBy = true
-	filterStatement, args := b.filterStatement()
+	filterStatement, args := b.queryWithFilters()
+	preSelect := b.psqlSelectList(b.excludeColumns, b.includeColumns, false)
+	// Strip preSelect from filterStatement
+	filterStatement = strings.Replace(filterStatement, preSelect, "", -1)
 	b.ignoreLimit = origIgnoreLimit
 	b.ignoreOffset = origIgnoreOffset
 	b.ignoreOrderBy = origIgnoreOrderBy

@@ -1644,3 +1644,17 @@ func TestJoinFilter1(t *testing.T) {
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
 }
+
+func TestJoinCount(t *testing.T) {
+	psql := newPsql(t)
+	createSimpleJoinModel(t, psql)
+
+	qs := Q[joinSimpleModelMain](psql)
+	args := NewArgs()
+	args.Set("id", int32(1))
+	qs = qs.InnerJoin(nil, joinModelForeign{}, "id", "foreign_key").Filter("joinModelForeign.id=:id").Args(args)
+
+	ret, err := qs.Count()
+	require.Nil(t, err)
+	require.Equal(t, 1, ret)
+}
