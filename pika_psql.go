@@ -321,6 +321,9 @@ func (b *basePsql[T]) GetOrNil() (*T, error) {
 	}
 
 	q, args := b.GetOrNilQuery()
+	if b.err != nil {
+		return nil, b.err
+	}
 
 	// Execute query
 	var x T
@@ -778,6 +781,9 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 					if _, ok := b.args.Get(noWildcard[1:]); ok {
 						// If mapping found, replace with numbered parameter
 						v = fmt.Sprintf("$%d", mapping[noWildcard[1:]])
+					} else {
+						b.err = fmt.Errorf("missing argument: %s", noWildcard)
+						return "", nil
 					}
 				}
 				andOr := "AND"
