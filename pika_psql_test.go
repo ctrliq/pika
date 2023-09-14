@@ -1658,3 +1658,33 @@ func TestJoinCount(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 1, ret)
 }
+
+func TestFilterMissingArgs(t *testing.T) {
+	psql := newPsql(t)
+	qs := Q[simpleModel1](psql)
+	args := NewArgs()
+
+	qs = qs.Filter("id=:id").Args(args)
+
+	requireError := func(err error) {
+		require.NotNil(t, err)
+		require.NotContains(t, err.Error(), "syntax")
+		require.Contains(t, err.Error(), "missing argument")
+	}
+
+	ret, err := qs.GetOrNil()
+	require.Nil(t, ret)
+	requireError(err)
+
+	_, err = qs.Get()
+	requireError(err)
+
+	err = qs.Delete()
+	requireError(err)
+
+	_, err = qs.All()
+	requireError(err)
+
+	_, err = qs.Count()
+	requireError(err)
+}
