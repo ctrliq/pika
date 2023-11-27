@@ -85,7 +85,7 @@ type QuerySet[T any] interface {
 	ClearAll() QuerySet[T]
 
 	// Create creates a new value
-	Create(value *T) error
+	Create(value *T, options ...CreateOption) error
 
 	// Update updates a value
 	// All filters will be applied
@@ -130,7 +130,7 @@ type QuerySet[T any] interface {
 	// Query related methods
 
 	// CreateQuery returns the query and args for Create
-	CreateQuery(value *T) (string, []interface{})
+	CreateQuery(value *T, options ...CreateOption) (string, []interface{})
 
 	// UpdateQuery returns the query and args for Update
 	UpdateQuery(value *T) (string, []interface{})

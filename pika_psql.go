@@ -67,6 +67,10 @@ type basePsql[T any] struct {
 	psql *PostgreSQL
 }
 
+type CreateOption byte
+
+const InsertOnConflictionDoNothing CreateOption = 1 << iota
+
 // NewPostgreSQL returns a new PostgreSQL instance.
 // connectionString should be sqlx compatible.
 func NewPostgreSQL(connectionString string) (*PostgreSQL, error) {
@@ -254,19 +258,24 @@ func (b *basePsql[T]) ClearAll() QuerySet[T] {
 }
 
 // Create creates a new record in the database.
-func (b *basePsql[T]) Create(x *T) error {
+func (b *basePsql[T]) Create(x *T, options ...CreateOption) error {
 	if b.err != nil {
 		return b.err
 	}
 
 	origIgnoreOrderBy := b.ignoreOrderBy
 	b.ignoreOrderBy = true
-	q, args := b.CreateQuery(x)
+
+	q, args := b.CreateQuery(x, options...)
 	b.ignoreOrderBy = origIgnoreOrderBy
 
 	// Execute query
 	err := b.psql.Queryable().Get(x, q, args...)
 	if err != nil {
+		// ignore no rows in resultset error when ignoreConflict is set to true, this is a normal case
+		if errors.Is(err, sql.ErrNoRows) && (InsertOnConflictionDoNothing&getOption(options...) != 0) {
+			return nil
+		}
 		return err
 	}
 
@@ -468,8 +477,8 @@ func (b *basePsql[T]) ResetOrderBy() QuerySet[T] {
 }
 
 // CreateQuery returns the query and arguments for Create
-func (b *basePsql[T]) CreateQuery(x *T) (string, []interface{}) {
-	q, args := b.psqlCreateQuery(x)
+func (b *basePsql[T]) CreateQuery(x *T, options ...CreateOption) (string, []interface{}) {
+	q, args := b.psqlCreateQuery(x, options...)
 	logger.Debugf("Pika query: %s", q)
 
 	return q, args
@@ -1126,7 +1135,7 @@ func (b *basePsql[T]) psqlCountQuery() string {
 	return q
 }
 
-func (b *basePsql[T]) psqlCreateQuery(value *T) (string, []any) {
+func (b *basePsql[T]) psqlCreateQuery(value *T, options ...CreateOption) (string, []any) {
 	// Get info from metadata
 	tableName := b.metadata[PikaMetadataTableName]
 	modelName := b.metadata[pikaMetadataModelName]
@@ -1178,7 +1187,12 @@ func (b *basePsql[T]) psqlCreateQuery(value *T) (string, []any) {
 	// Remove the model name prefix from the select list
 	// since we are inserting into the table
 	selectList = strings.Replace(selectList, fmt.Sprintf("\"%s\".", modelName), "", -1)
-	q := fmt.Sprintf("INSERT INTO \"%s\" (%s) VALUES (%s) RETURNING %s", tableName, columnStr, valueStr, selectList)
+	conflict := ""
+
+	if InsertOnConflictionDoNothing&getOption(options...) != 0 {
+		conflict = " ON CONFLICT DO NOTHING"
+	}
+	q := fmt.Sprintf("INSERT INTO \"%s\" (%s) VALUES (%s)%s RETURNING %s", tableName, columnStr, valueStr, conflict, selectList)
 
 	// Convert value to arguments
 	args := make([]interface{}, 0, ref.Elem().NumField())
@@ -1424,4 +1438,13 @@ func generateRangeSlice(start, length int) *[]int {
 		ret[idx] = start + idx
 	}
 	return &ret
+}
+
+func getOption(options ...CreateOption) CreateOption {
+	var option CreateOption
+	for _, o := range options {
+		option |= o
+	}
+
+	return option
 }

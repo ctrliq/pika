@@ -1144,6 +1144,53 @@ func TestCreate(t *testing.T) {
 	require.Equal(t, entry.Description, x[0].Description)
 }
 
+func TestCreateIgnore(t *testing.T) {
+	psql := newPsql(t)
+	createTestModelCreate(t, psql)
+	qs := Q[simpleModelCreate](psql)
+
+	// Create a new entry
+	entry := simpleModelCreate{
+		ID:          1,
+		Title:       "test",
+		Description: "test-description",
+	}
+
+	expectedQuery := `INSERT INTO "simple_model_create" ("id", "title", "description") VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING "id", "title", "description"`
+	expectedArgs := []interface{}{1, "test", "test-description"}
+	actualQuery, actualArgs := qs.CreateQuery(&entry, InsertOnConflictionDoNothing)
+	require.Equal(t, expectedQuery, actualQuery)
+	require.Equal(t, expectedArgs, actualArgs)
+
+	err := qs.Create(&entry)
+	require.Nil(t, err)
+	require.Equal(t, 1, entry.ID)
+
+	// create again will cause duplication error
+	err = qs.Create(&entry)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "duplicate key value violates unique constraint")
+
+	// createignore will not throw out the error
+	err = qs.Create(&entry, InsertOnConflictionDoNothing)
+	require.Nil(t, err)
+
+	// Select the entry and check if it is the same
+	qs = Q[simpleModelCreate](psql)
+	args := NewArgs()
+	args.Set("id", entry.ID)
+	args.Set("title", entry.Title)
+	args.Set("description", entry.Description)
+	qs = qs.Filter("id=:id", "title=:title", "description=:description").Args(args)
+
+	x, err := qs.All()
+	require.Nil(t, err)
+	require.Equal(t, 1, len(x))
+	require.Equal(t, entry.ID, x[0].ID)
+	require.Equal(t, entry.Title, x[0].Title)
+	require.Equal(t, entry.Description, x[0].Description)
+}
+
 func TestUpdate(t *testing.T) {
 	psql := newPsql(t)
 	createTestModelCreate(t, psql)
