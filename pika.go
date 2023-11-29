@@ -4,6 +4,8 @@
 package pika
 
 import (
+	"context"
+
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
@@ -165,6 +167,34 @@ type QuerySet[T any] interface {
 	Exclude(excludes ...string) QuerySet[T]
 	// Include fields
 	Include(includes ...string) QuerySet[T]
+
+	// EXPERIMENTAL
+	// The following methods are EXPERIMENTAL. Think of it as a sneak peek on what's coming.
+	// It is mostly to experiment with a simpler API for filtering, updating and querying.
+	// Feel free to test it out and provide feedback.
+
+	// U is a shorthand for Update. ID field is used as the filter.
+	// Other filters applied to the query set are also inherited.
+	// Returns an error if the ID field is not set or does not exist.
+	// Thus preventing accidental updates to all rows.
+	U(value *T) error
+
+	// F is a shorthand for Filter. It is a variadic function that accepts a list of filters.
+	// The filters are applied in the order they are given.
+	// Format is as follows: <KEY>, <VALUE> etc.
+	F(keyval ...any) QuerySet[T]
+
+	// D is a shorthand for Delete. ID field is used as the filter.
+	// Other filters applied to the query set are also inherited.
+	// Returns an error if the ID field is not set or does not exist.
+	// Thus preventing accidental deletes to all rows.
+	D(value *T) error
+
+	// Transaction is a shorthand for wrapping a query set in a transaction.
+	// Currently Pika transactions affects the full connection, not just the query set.
+	// That method works if you use factories to create query sets.
+	// This helper will re-use the internal DB instance to return a new query set with the transaction.
+	Transaction(ctx context.Context) (QuerySet[T], error)
 }
 
 func NewArgs() *orderedmap.OrderedMap[string, any] {
