@@ -1,5 +1,5 @@
 # pika
-ORM-like SQL builder
+ORM-like SQL builder inspired by [kayak/pypika](https://github.com/kayak/pypika)
 
 # Features
 * Any feature supported by sqlx
