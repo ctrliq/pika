@@ -32,3 +32,16 @@ message Complete3 {
   Status status = 6;
   repeated string strs = 7;
 }
+
+message TestRequest1 {
+  int32 page_size = 1;
+  string page_token = 2;
+  string filter = 3;
+  string order_by = 4;
+}
+
+message SimpleModel1 {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+}

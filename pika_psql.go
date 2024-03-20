@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -542,7 +542,11 @@ func (b *basePsql[T]) AIP160(filter string, options AIPFilterOptions) (QuerySet[
 }
 
 // Page tokens for gRPC
-func (b *basePsql[T]) GetPage(paginatable Paginatable, options AIPFilterOptions) ([]*T, string, error) {
+func (b *basePsql[T]) GetPage(paginatable Paginatable, options AIPFilterOptions, countPointer ...*int) ([]*T, string, error) {
+	if len(countPointer) > 1 {
+		return nil, "", fmt.Errorf("too many arguments (count should be one pointer or none)")
+	}
+
 	if b.err != nil {
 		return nil, "", b.err
 	}
@@ -577,6 +581,10 @@ func (b *basePsql[T]) GetPage(paginatable Paginatable, options AIPFilterOptions)
 	count, err := b.Count()
 	if err != nil {
 		return nil, "", fmt.Errorf("getting count: %w", err)
+	}
+
+	if len(countPointer) > 0 {
+		*countPointer[0] = count
 	}
 
 	// If no more results after this page, return empty page token

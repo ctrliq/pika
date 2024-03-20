@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -57,7 +57,7 @@ func (p *PageToken[T]) Encode() (string, error) {
 	return base64.URLEncoding.EncodeToString(data), nil
 }
 
-// ParsePageToken constructs a PageToken from a base64-encoded string
+// Decode constructs a PageToken from a base64-encoded string
 func (p *PageToken[T]) Decode(s string) error {
 	data, err := base64.URLEncoding.DecodeString(s)
 	if err != nil {

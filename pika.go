@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -155,7 +155,9 @@ type QuerySet[T any] interface {
 	AIP160(filter string, options AIPFilterOptions) (QuerySet[T], error)
 
 	// Page token functionality for gRPC
-	GetPage(paginatable Paginatable, options AIPFilterOptions) ([]*T, string, error)
+	// The count is optional and returns the total number of rows for the query.
+	// It is implemented as a variadic function to not break existing code.
+	GetPage(paginatable Paginatable, options AIPFilterOptions, count ...*int) ([]*T, string, error)
 
 	// Join table
 	InnerJoin(modelFirst, modelSecond interface{}, keyFirst, keySecond string) QuerySet[T]
