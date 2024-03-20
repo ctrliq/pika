@@ -16,6 +16,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
+	pikatestpb "go.ciq.dev/pika/testproto"
 )
 
 var pgInstance *embeddedpostgres.EmbeddedPostgres
@@ -1734,4 +1735,22 @@ func TestFilterMissingArgs(t *testing.T) {
 
 	_, err = qs.Count()
 	requireError(err)
+}
+
+func TestGetPageCount(t *testing.T) {
+	psql := newPsql(t)
+	createTestEntries(t, psql)
+	qs := Q[simpleModel1](psql)
+
+	aipOptions := ProtoReflect(&pikatestpb.SimpleModel1{})
+	req := &pikatestpb.TestRequest1{
+		PageSize: int32(1),
+	}
+	var count int
+	page, nt, err := qs.GetPage(req, aipOptions, &count)
+	require.Nil(t, err)
+
+	require.Equal(t, 1, len(page))
+	require.NotEmpty(t, nt)
+	require.Equal(t, 3, count)
 }

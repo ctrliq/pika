@@ -57,7 +57,7 @@ func (p *PageToken[T]) Encode() (string, error) {
 	return base64.URLEncoding.EncodeToString(data), nil
 }
 
-// ParsePageToken constructs a PageToken from a base64-encoded string
+// Decode constructs a PageToken from a base64-encoded string
 func (p *PageToken[T]) Decode(s string) error {
 	data, err := base64.URLEncoding.DecodeString(s)
 	if err != nil {
