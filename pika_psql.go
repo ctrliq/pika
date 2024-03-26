@@ -32,20 +32,12 @@ type Queryable interface {
 	sqlx.Preparer
 
 	GetContext(context.Context, interface{}, string, ...interface{}) error
-	SelectContext(context.Context, interface{}, string, ...interface{}) error
-	Get(interface{}, string, ...interface{}) error
 	MustExecContext(context.Context, string, ...interface{}) sql.Result
+	NamedExecContext(context.Context, string, interface{}) (sql.Result, error)
+	PrepareNamedContext(context.Context, string) (*sqlx.NamedStmt, error)
 	PreparexContext(context.Context, string) (*sqlx.Stmt, error)
 	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
-	Select(interface{}, string, ...interface{}) error
-	QueryRow(string, ...interface{}) *sql.Row
-	PrepareNamedContext(context.Context, string) (*sqlx.NamedStmt, error)
-	PrepareNamed(string) (*sqlx.NamedStmt, error)
-	Preparex(string) (*sqlx.Stmt, error)
-	NamedExec(string, interface{}) (sql.Result, error)
-	NamedExecContext(context.Context, string, interface{}) (sql.Result, error)
-	MustExec(string, ...interface{}) sql.Result
-	NamedQuery(string, interface{}) (*sqlx.Rows, error)
+	SelectContext(context.Context, interface{}, string, ...interface{}) error
 }
 
 var (
@@ -258,7 +250,7 @@ func (b *basePsql[T]) ClearAll() QuerySet[T] {
 }
 
 // Create creates a new record in the database.
-func (b *basePsql[T]) Create(x *T, options ...CreateOption) error {
+func (b *basePsql[T]) Create(ctx context.Context, x *T, options ...CreateOption) error {
 	if b.err != nil {
 		return b.err
 	}
@@ -270,7 +262,7 @@ func (b *basePsql[T]) Create(x *T, options ...CreateOption) error {
 	b.ignoreOrderBy = origIgnoreOrderBy
 
 	// Execute query
-	err := b.psql.Queryable().Get(x, q, args...)
+	err := b.psql.Queryable().GetContext(ctx, x, q, args...)
 	if err != nil {
 		// ignore no rows in resultset error when ignoreConflict is set to true, this is a normal case
 		if errors.Is(err, sql.ErrNoRows) && (InsertOnConflictionDoNothing&getOption(options...) != 0) {
@@ -283,7 +275,7 @@ func (b *basePsql[T]) Create(x *T, options ...CreateOption) error {
 }
 
 // Update updates a record in the database.
-func (b *basePsql[T]) Update(x *T) error {
+func (b *basePsql[T]) Update(ctx context.Context, x *T) error {
 	if b.err != nil {
 		return b.err
 	}
@@ -294,7 +286,7 @@ func (b *basePsql[T]) Update(x *T) error {
 	b.ignoreOrderBy = origIgnoreOrderBy
 
 	// Execute query
-	err := b.psql.Queryable().Get(x, q, args...)
+	err := b.psql.Queryable().GetContext(ctx, x, q, args...)
 	if err != nil {
 		return err
 	}
@@ -303,7 +295,7 @@ func (b *basePsql[T]) Update(x *T) error {
 }
 
 // Delete deletes a record from the database.
-func (b *basePsql[T]) Delete() error {
+func (b *basePsql[T]) Delete(ctx context.Context) error {
 	if b.err != nil {
 		return b.err
 	}
@@ -314,7 +306,7 @@ func (b *basePsql[T]) Delete() error {
 	b.ignoreOrderBy = origIgnoreOrderBy
 
 	// Execute query
-	_, err := b.psql.Queryable().Exec(q, args...)
+	_, err := b.psql.Queryable().ExecContext(ctx, q, args...)
 	if err != nil {
 		return err
 	}
@@ -324,7 +316,7 @@ func (b *basePsql[T]) Delete() error {
 
 // GetOrNil returns a single value or nil
 // Multiple values will return an error.
-func (b *basePsql[T]) GetOrNil() (*T, error) {
+func (b *basePsql[T]) GetOrNil(ctx context.Context) (*T, error) {
 	if b.err != nil {
 		return nil, b.err
 	}
@@ -338,7 +330,7 @@ func (b *basePsql[T]) GetOrNil() (*T, error) {
 	var x T
 
 	// Send arguments to prepared statement
-	err := b.psql.Queryable().Get(&x, q, args...)
+	err := b.psql.Queryable().GetContext(ctx, &x, q, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -352,7 +344,7 @@ func (b *basePsql[T]) GetOrNil() (*T, error) {
 // Get returns a single value
 // Returns error if no value is found
 // Returns error if multiple values are found
-func (b *basePsql[T]) Get() (*T, error) {
+func (b *basePsql[T]) Get(ctx context.Context) (*T, error) {
 	if b.err != nil {
 		return nil, b.err
 	}
@@ -363,7 +355,7 @@ func (b *basePsql[T]) Get() (*T, error) {
 	var x T
 
 	// Send arguments to prepared statement
-	err := b.psql.Queryable().Get(&x, q, args...)
+	err := b.psql.Queryable().GetContext(ctx, &x, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +364,7 @@ func (b *basePsql[T]) Get() (*T, error) {
 }
 
 // All returns all values
-func (b *basePsql[T]) All() ([]*T, error) {
+func (b *basePsql[T]) All(ctx context.Context) ([]*T, error) {
 	if b.err != nil {
 		return nil, b.err
 	}
@@ -383,7 +375,7 @@ func (b *basePsql[T]) All() ([]*T, error) {
 	var x []*T
 
 	// Send arguments to prepared statement
-	err := b.psql.Queryable().Select(&x, q, args...)
+	err := b.psql.Queryable().SelectContext(ctx, &x, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +384,7 @@ func (b *basePsql[T]) All() ([]*T, error) {
 }
 
 // Count returns the number of values
-func (b *basePsql[T]) Count() (int, error) {
+func (b *basePsql[T]) Count(ctx context.Context) (int, error) {
 	if b.err != nil {
 		return 0, b.err
 	}
@@ -420,7 +412,7 @@ func (b *basePsql[T]) Count() (int, error) {
 	q := fmt.Sprintf("%s%s", selectQuery, filterStatement)
 	logger.Debugf("Pika query: %s", q)
 
-	err := b.psql.Queryable().Get(&x, q, args...)
+	err := b.psql.Queryable().GetContext(ctx, &x, q, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -542,7 +534,7 @@ func (b *basePsql[T]) AIP160(filter string, options AIPFilterOptions) (QuerySet[
 }
 
 // Page tokens for gRPC
-func (b *basePsql[T]) GetPage(paginatable Paginatable, options AIPFilterOptions, countPointer ...*int) ([]*T, string, error) {
+func (b *basePsql[T]) GetPage(ctx context.Context, paginatable Paginatable, options AIPFilterOptions, countPointer ...*int) ([]*T, string, error) {
 	if len(countPointer) > 1 {
 		return nil, "", fmt.Errorf("too many arguments (count should be one pointer or none)")
 	}
@@ -570,7 +562,7 @@ func (b *basePsql[T]) GetPage(paginatable Paginatable, options AIPFilterOptions,
 		return nil, "", err
 	}
 
-	result, err := qs.All()
+	result, err := qs.All(ctx)
 	if err != nil {
 		return nil, "", err
 	}
@@ -578,7 +570,7 @@ func (b *basePsql[T]) GetPage(paginatable Paginatable, options AIPFilterOptions,
 	b.PageToken.Offset += uint(len(result))
 
 	// Get count and check if there are more results
-	count, err := b.Count()
+	count, err := b.Count(ctx)
 	if err != nil {
 		return nil, "", fmt.Errorf("getting count: %w", err)
 	}

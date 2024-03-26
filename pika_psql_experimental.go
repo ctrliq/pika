@@ -49,7 +49,7 @@ func (b *basePsql[T]) D(x *T) error {
 	}
 
 	qs := b.F("id", id)
-	return qs.Delete()
+	return qs.Delete(context.Background())
 }
 
 func (b *basePsql[T]) Transaction(ctx context.Context) (QuerySet[T], error) {
@@ -69,5 +69,5 @@ func (b *basePsql[T]) U(x *T) error {
 	}
 
 	qs := b.F("id", id)
-	return qs.Update(x)
+	return qs.Update(context.Background(), x)
 }
