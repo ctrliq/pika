@@ -179,7 +179,7 @@ type QuerySet[T any] interface {
 	// Other filters applied to the query set are also inherited.
 	// Returns an error if the ID field is not set or does not exist.
 	// Thus preventing accidental updates to all rows.
-	U(value *T) error
+	U(ctx context.Context, value *T) error
 
 	// F is a shorthand for Filter. It is a variadic function that accepts a list of filters.
 	// The filters are applied in the order they are given.
@@ -190,7 +190,7 @@ type QuerySet[T any] interface {
 	// Other filters applied to the query set are also inherited.
 	// Returns an error if the ID field is not set or does not exist.
 	// Thus preventing accidental deletes to all rows.
-	D(value *T) error
+	D(ctx context.Context, value *T) error
 
 	// Transaction is a shorthand for wrapping a query set in a transaction.
 	// Currently Pika transactions affects the full connection, not just the query set.

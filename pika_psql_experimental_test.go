@@ -53,7 +53,7 @@ func TestU(t *testing.T) {
 
 	elem := m[0]
 	elem.Title = "TestUpdated"
-	err = Q[simpleModel1](psql).U(elem)
+	err = Q[simpleModel1](psql).U(context.Background(), elem)
 	require.Nil(t, err)
 
 	m, err = Q[simpleModel1](psql).F("title", "TestUpdated").All(context.Background())
@@ -74,7 +74,7 @@ func TestD(t *testing.T) {
 	require.Equal(t, "Test", m[0].Title)
 
 	elem := m[0]
-	err = Q[simpleModel1](psql).D(elem)
+	err = Q[simpleModel1](psql).D(context.Background(), elem)
 	require.Nil(t, err)
 
 	m, err = Q[simpleModel1](psql).F("title", "Test").All(context.Background())
