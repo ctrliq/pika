@@ -42,14 +42,14 @@ func (b *basePsql[T]) F(keyval ...any) QuerySet[T] {
 	return b.Args(args).Filter(queries...)
 }
 
-func (b *basePsql[T]) D(x *T) error {
+func (b *basePsql[T]) D(ctx context.Context, x *T) error {
 	id := b.findID(x)
 	if id == nil {
 		return fmt.Errorf("id not found")
 	}
 
 	qs := b.F("id", id)
-	return qs.Delete(context.Background())
+	return qs.Delete(ctx)
 }
 
 func (b *basePsql[T]) Transaction(ctx context.Context) (QuerySet[T], error) {
@@ -62,12 +62,12 @@ func (b *basePsql[T]) Transaction(ctx context.Context) (QuerySet[T], error) {
 	return Q[T](ts), nil
 }
 
-func (b *basePsql[T]) U(x *T) error {
+func (b *basePsql[T]) U(ctx context.Context, x *T) error {
 	id := b.findID(x)
 	if id == nil {
 		return fmt.Errorf("id not found")
 	}
 
 	qs := b.F("id", id)
-	return qs.Update(context.Background(), x)
+	return qs.Update(ctx, x)
 }
