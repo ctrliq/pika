@@ -87,32 +87,32 @@ type QuerySet[T any] interface {
 	ClearAll() QuerySet[T]
 
 	// Create creates a new value
-	Create(value *T, options ...CreateOption) error
+	Create(ctx context.Context, value *T, options ...CreateOption) error
 
 	// Update updates a value
 	// All filters will be applied
-	Update(value *T) error
+	Update(ctx context.Context, value *T) error
 
 	// Delete deletes a row
 	// All filters will be applied
-	Delete() error
+	Delete(ctx context.Context) error
 
 	// GetOrNil returns a single value or nil
 	// Multiple values will return an error.
 	// Ignores Limit
-	GetOrNil() (*T, error)
+	GetOrNil(ctx context.Context) (*T, error)
 
 	// Get returns a single value
 	// Returns error if no value is found
 	// Returns error if multiple values are found
 	// Ignores Limit
-	Get() (*T, error)
+	Get(ctx context.Context) (*T, error)
 
 	// All returns all values
-	All() ([]*T, error)
+	All(ctx context.Context) ([]*T, error)
 
 	// Count returns the number of values
-	Count() (int, error)
+	Count(ctx context.Context) (int, error)
 
 	// Limit sets the limit for the query
 	Limit(limit int) QuerySet[T]
@@ -157,7 +157,7 @@ type QuerySet[T any] interface {
 	// Page token functionality for gRPC
 	// The count is optional and returns the total number of rows for the query.
 	// It is implemented as a variadic function to not break existing code.
-	GetPage(paginatable Paginatable, options AIPFilterOptions, count ...*int) ([]*T, string, error)
+	GetPage(ctx context.Context, paginatable Paginatable, options AIPFilterOptions, count ...*int) ([]*T, string, error)
 
 	// Join table
 	InnerJoin(modelFirst, modelSecond interface{}, keyFirst, keySecond string) QuerySet[T]
@@ -179,7 +179,7 @@ type QuerySet[T any] interface {
 	// Other filters applied to the query set are also inherited.
 	// Returns an error if the ID field is not set or does not exist.
 	// Thus preventing accidental updates to all rows.
-	U(value *T) error
+	U(ctx context.Context, value *T) error
 
 	// F is a shorthand for Filter. It is a variadic function that accepts a list of filters.
 	// The filters are applied in the order they are given.
@@ -190,7 +190,7 @@ type QuerySet[T any] interface {
 	// Other filters applied to the query set are also inherited.
 	// Returns an error if the ID field is not set or does not exist.
 	// Thus preventing accidental deletes to all rows.
-	D(value *T) error
+	D(ctx context.Context, value *T) error
 
 	// Transaction is a shorthand for wrapping a query set in a transaction.
 	// Currently Pika transactions affects the full connection, not just the query set.

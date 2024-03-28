@@ -303,7 +303,7 @@ func TestGetOrNil(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.GetOrNil()
+	ret, err := qs.GetOrNil(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -326,7 +326,7 @@ func TestGetOrNilNotFound(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.GetOrNil()
+	ret, err := qs.GetOrNil(context.Background())
 	require.Nil(t, err)
 	require.Nil(t, ret)
 }
@@ -349,7 +349,7 @@ func TestGetOrNilOrFilter(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.GetOrNil()
+	ret, err := qs.GetOrNil(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -372,7 +372,7 @@ func TestGet(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.Get()
+	ret, err := qs.Get(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -394,7 +394,7 @@ func TestGetNotFound(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.Get()
+	ret, err := qs.Get(context.Background())
 	require.NotNil(t, err)
 	require.EqualError(t, err, "sql: no rows in result set")
 	require.Nil(t, ret)
@@ -410,7 +410,7 @@ func TestAll(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -440,7 +440,7 @@ func TestAllWithFilter(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -468,7 +468,7 @@ func TestAllWithFilterOr(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -493,7 +493,7 @@ func TestAllLimit(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -518,7 +518,7 @@ func TestAllLimitOrderBy(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -543,7 +543,7 @@ func TestAllLimitOrderByDesc(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -568,7 +568,7 @@ func TestAllLimitOffset(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -596,7 +596,7 @@ func TestGetOrNilGeneric(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.GetOrNil()
+	ret, err := qs.GetOrNil(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -615,7 +615,7 @@ func TestAllDefaultOrderBy(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -649,7 +649,7 @@ func TestAllMixedAndOrCombined(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -683,7 +683,7 @@ func TestAllMixedAndOrInOr(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -728,7 +728,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -748,7 +748,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -768,7 +768,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 	require.NotNil(t, ret)
 
@@ -787,7 +787,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -806,7 +806,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(ret))
@@ -824,7 +824,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(ret))
@@ -842,7 +842,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -861,7 +861,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(ret))
@@ -879,7 +879,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(ret))
@@ -897,7 +897,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -916,7 +916,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -935,7 +935,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(ret))
@@ -953,7 +953,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(ret))
@@ -971,7 +971,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -990,7 +990,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -1007,7 +1007,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -1024,7 +1024,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(ret))
@@ -1042,7 +1042,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -1061,7 +1061,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 0, len(ret))
@@ -1076,7 +1076,7 @@ func TestAllOperators(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.All()
+	ret, err = qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 3, len(ret))
@@ -1100,7 +1100,7 @@ func TestAllIsNotNullOr(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(ret))
@@ -1125,7 +1125,7 @@ func TestCreate(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	err := qs.Create(&entry)
+	err := qs.Create(context.Background(), &entry)
 	require.Nil(t, err)
 	require.Equal(t, 1, entry.ID)
 
@@ -1137,7 +1137,7 @@ func TestCreate(t *testing.T) {
 	args.Set("description", entry.Description)
 	qs = qs.Filter("id=:id", "title=:title", "description=:description").Args(args)
 
-	x, err := qs.All()
+	x, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(x))
 	require.Equal(t, entry.ID, x[0].ID)
@@ -1163,17 +1163,17 @@ func TestCreateIgnore(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	err := qs.Create(&entry)
+	err := qs.Create(context.Background(), &entry)
 	require.Nil(t, err)
 	require.Equal(t, 1, entry.ID)
 
 	// create again will cause duplication error
-	err = qs.Create(&entry)
+	err = qs.Create(context.Background(), &entry)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "duplicate key value violates unique constraint")
 
 	// createignore will not throw out the error
-	err = qs.Create(&entry, InsertOnConflictionDoNothing)
+	err = qs.Create(context.Background(), &entry, InsertOnConflictionDoNothing)
 	require.Nil(t, err)
 
 	// Select the entry and check if it is the same
@@ -1184,7 +1184,7 @@ func TestCreateIgnore(t *testing.T) {
 	args.Set("description", entry.Description)
 	qs = qs.Filter("id=:id", "title=:title", "description=:description").Args(args)
 
-	x, err := qs.All()
+	x, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(x))
 	require.Equal(t, entry.ID, x[0].ID)
@@ -1203,7 +1203,7 @@ func TestUpdate(t *testing.T) {
 		Description: "test-description",
 	}
 
-	err := qs.Create(&entry)
+	err := qs.Create(context.Background(), &entry)
 	require.Nil(t, err)
 	require.Equal(t, 1, entry.ID)
 
@@ -1221,7 +1221,7 @@ func TestUpdate(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	err = qs.Update(&entry)
+	err = qs.Update(context.Background(), &entry)
 	require.Nil(t, err)
 
 	// Select the entry and check if it is the same
@@ -1232,7 +1232,7 @@ func TestUpdate(t *testing.T) {
 	args.Set("description", entry.Description)
 	qs = qs.Filter("id=:id", "title=:title", "description=:description").Args(args)
 
-	x, err := qs.All()
+	x, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(x))
 	require.Equal(t, entry.ID, x[0].ID)
@@ -1251,7 +1251,7 @@ func TestTransactionUpdate(t *testing.T) {
 		Description: "test-description",
 	}
 
-	err := qs.Create(&entry)
+	err := qs.Create(context.Background(), &entry)
 	require.Nil(t, err)
 	require.Equal(t, 1, entry.ID)
 
@@ -1267,7 +1267,7 @@ func TestTransactionUpdate(t *testing.T) {
 	qs = qs.Filter("id=:id").Args(args)
 	entry.Title = "test2"
 	entry.Description = "test-description2"
-	err = qs.Update(&entry)
+	err = qs.Update(context.Background(), &entry)
 	require.Nil(t, err)
 
 	// commit the transaction
@@ -1282,7 +1282,7 @@ func TestTransactionUpdate(t *testing.T) {
 	args.Set("description", entry.Description)
 	qs = qs.Filter("id=:id", "title=:title", "description=:description").Args(args)
 
-	x, err := qs.All()
+	x, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(x))
 	require.Equal(t, entry.ID, x[0].ID)
@@ -1303,7 +1303,7 @@ func TestTransactionRollback(t *testing.T) {
 		Description: originalDescription,
 	}
 
-	err := qs.Create(&entry)
+	err := qs.Create(context.Background(), &entry)
 	require.Nil(t, err)
 	require.Equal(t, 1, entry.ID)
 
@@ -1319,7 +1319,7 @@ func TestTransactionRollback(t *testing.T) {
 	qs = qs.Filter("id=:id").Args(args)
 	entry.Title = "test2"
 	entry.Description = "test-description2"
-	err = qs.Update(&entry)
+	err = qs.Update(context.Background(), &entry)
 	require.Nil(t, err)
 
 	// commit the transaction
@@ -1334,7 +1334,7 @@ func TestTransactionRollback(t *testing.T) {
 	args.Set("description", entry.Description)
 	qs = qs.Filter("id=:id", "title=:title", "description=:description").Args(args)
 
-	x, err := qs.All()
+	x, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 0, len(x))
 
@@ -1344,7 +1344,7 @@ func TestTransactionRollback(t *testing.T) {
 	args.Set("id", entry.ID)
 	qs = qs.Filter("id=:id").Args(args)
 
-	x, err = qs.All()
+	x, err = qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(x))
 	require.Equal(t, entry.ID, x[0].ID)
@@ -1363,7 +1363,7 @@ func TestDelete(t *testing.T) {
 		Description: "test-description",
 	}
 
-	err := qs.Create(&entry)
+	err := qs.Create(context.Background(), &entry)
 	require.Nil(t, err)
 	require.Equal(t, 1, entry.ID)
 
@@ -1379,7 +1379,7 @@ func TestDelete(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	err = qs.Delete()
+	err = qs.Delete(context.Background())
 	require.Nil(t, err)
 
 	// Select the entry and check if it is the same
@@ -1388,7 +1388,7 @@ func TestDelete(t *testing.T) {
 	args.Set("id", entry.ID)
 	qs = qs.Filter("id=:id").Args(args)
 
-	x, err := qs.All()
+	x, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 0, len(x))
 }
@@ -1409,7 +1409,7 @@ func TestInOperatorWithArrayColumn(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(ret))
 	require.Equal(t, 1, ret[0].ID)
@@ -1432,7 +1432,7 @@ func TestNotInOperatorWithArrayColumn(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 2, len(ret))
 	require.Equal(t, 2, ret[0].ID)
@@ -1457,7 +1457,7 @@ func TestInOperatorWithArrayColumnInt32(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.All()
+	ret, err := qs.All(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(ret))
 	require.Equal(t, 1, ret[0].ID)
@@ -1479,7 +1479,7 @@ func TestSimpleJoinModel(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.Get()
+	ret, err := qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1492,7 +1492,7 @@ func TestSimpleJoinModel(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.Get()
+	ret, err = qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1505,7 +1505,7 @@ func TestSimpleJoinModel(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.Get()
+	ret, err = qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1518,7 +1518,7 @@ func TestSimpleJoinModel(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.Get()
+	ret, err = qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1539,7 +1539,7 @@ func TestComplexJoinModel(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.Get()
+	ret, err := qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1565,7 +1565,7 @@ func TestSimpleSubquery(t *testing.T) {
 	require.Equal(t, expectedArgs, actualArgs)
 	require.Equal(t, expectedQuery, actualQuery)
 
-	ret, err := qs.Get()
+	ret, err := qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1586,7 +1586,7 @@ func TestSimpleSubqueryWithValues(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.Get()
+	ret, err := qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1618,7 +1618,7 @@ func TestComplexSubQuery(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.Get()
+	ret, err := qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1634,7 +1634,7 @@ func TestComplexSubQuery(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.Get()
+	ret, err = qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1650,7 +1650,7 @@ func TestComplexSubQuery(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.Get()
+	ret, err = qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1666,7 +1666,7 @@ func TestComplexSubQuery(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err = qs.Get()
+	ret, err = qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1687,7 +1687,7 @@ func TestJoinFilter1(t *testing.T) {
 	require.Equal(t, expectedQuery, actualQuery)
 	require.Equal(t, expectedArgs, actualArgs)
 
-	ret, err := qs.Get()
+	ret, err := qs.Get(context.Background())
 	require.Equal(t, err, nil)
 	require.NotNil(t, ret)
 	require.Equal(t, ret.ID, 1)
@@ -1702,7 +1702,7 @@ func TestJoinCount(t *testing.T) {
 	args.Set("id", int32(1))
 	qs = qs.InnerJoin(nil, joinModelForeign{}, "id", "foreign_key").Filter("joinModelForeign.id=:id").Args(args)
 
-	ret, err := qs.Count()
+	ret, err := qs.Count(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, 1, ret)
 }
@@ -1720,20 +1720,20 @@ func TestFilterMissingArgs(t *testing.T) {
 		require.Contains(t, err.Error(), "missing argument")
 	}
 
-	ret, err := qs.GetOrNil()
+	ret, err := qs.GetOrNil(context.Background())
 	require.Nil(t, ret)
 	requireError(err)
 
-	_, err = qs.Get()
+	_, err = qs.Get(context.Background())
 	requireError(err)
 
-	err = qs.Delete()
+	err = qs.Delete(context.Background())
 	requireError(err)
 
-	_, err = qs.All()
+	_, err = qs.All(context.Background())
 	requireError(err)
 
-	_, err = qs.Count()
+	_, err = qs.Count(context.Background())
 	requireError(err)
 }
 
@@ -1747,7 +1747,7 @@ func TestGetPageCount(t *testing.T) {
 		PageSize: int32(1),
 	}
 	var count int
-	page, nt, err := qs.GetPage(req, aipOptions, &count)
+	page, nt, err := qs.GetPage(context.Background(), req, aipOptions, &count)
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(page))
