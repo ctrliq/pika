@@ -10,15 +10,7 @@ This repository contains the original code for pika, which was developed by CIQ 
 a proof of concept (POC). It is intended solely as an illustrative example and is
 provided as-is for reference purposes only.
 
-## Disclaimer
-
-- **No Support:** This repository is no longer maintained or supported.
-
-- **No Warranty:** Software is provided "AS IS" without any warranty. Use at your own risk.
-
-- **Not for Production:** This software may contain security vulnerabilities and is _not intended for production use_.
-
-- **Liability:** CIQ assumes no liability for any damages arising from the use of this software. **_Use of this software is at your own risk._**
+> THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 By using this software, you acknowledge and agree to these terms.
 
