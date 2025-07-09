@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -34,6 +34,8 @@ var (
 	}
 )
 
+// ProtoReflectOptions configures how protobuf message reflection is performed
+// for generating AIP filter options.
 type ProtoReflectOptions struct {
 	// Exclude is a list of field names to exclude from the filter
 	// Uses proto name always, not JSON name
@@ -51,7 +53,7 @@ func protoReflect(m proto.Message, opts ProtoReflectOptions) AIPFilterOptions {
 	}
 
 	fields := m.ProtoReflect().Descriptor().Fields()
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		// Get field from message
 		fd := fields.Get(i)
 
@@ -109,10 +111,10 @@ func protoReflect(m proto.Message, opts ProtoReflectOptions) AIPFilterOptions {
 			}
 		case protoreflect.EnumKind:
 			// Add all enum values as aliases
-			for i := 0; i < fd.Enum().Values().Len(); i++ {
+			for i := range fd.Enum().Values().Len() {
 				enumName := string(fd.Enum().Values().Get(i).Name())
 				enumReverseSplit := strings.Split(enumName, "_")
-				for i := 0; i < len(enumReverseSplit)/2; i++ {
+				for i := range len(enumReverseSplit) / 2 {
 					j := len(enumReverseSplit) - i - 1
 					enumReverseSplit[i], enumReverseSplit[j] = enumReverseSplit[j], enumReverseSplit[i]
 				}
@@ -148,10 +150,16 @@ func protoReflect(m proto.Message, opts ProtoReflectOptions) AIPFilterOptions {
 	return res
 }
 
+// ProtoReflect generates AIP filter options from a protobuf message using default settings.
+// It uses reflection to analyze the message structure and create appropriate filter identifiers
+// for each field based on their protobuf types.
 func ProtoReflect(m proto.Message) AIPFilterOptions {
 	return protoReflect(m, ProtoReflectOptions{})
 }
 
+// ProtoReflectWithOpts generates AIP filter options from a protobuf message using custom options.
+// It allows for more control over the reflection process, including field exclusion and
+// custom column name mapping.
 func ProtoReflectWithOpts(m proto.Message, opts ProtoReflectOptions) AIPFilterOptions {
 	return protoReflect(m, opts)
 }

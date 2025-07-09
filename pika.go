@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -10,14 +10,20 @@ import (
 )
 
 var (
-	PikaMetadataTableName      = "PikaTableName"
+	// PikaMetadataTableName is the field name used to specify custom table names in struct tags.
+	PikaMetadataTableName = "PikaTableName"
+	// PikaMetadataDefaultOrderBy is the field name used to specify default ordering in struct tags.
 	PikaMetadataDefaultOrderBy = "PikaDefaultOrderBy"
-	PikaMetadataFields         = []string{
+	// PikaMetadataFields contains all available metadata field names for Pika configuration.
+	PikaMetadataFields = []string{
 		PikaMetadataTableName,
 		PikaMetadataDefaultOrderBy,
 	}
 )
 
+// Q creates a new QuerySet for the given type T using the provided database connection.
+// It automatically detects the database type and returns the appropriate QuerySet implementation.
+// Currently supports PostgreSQL connections. Panics if an unsupported database type is provided.
 func Q[T any](x any) QuerySet[T] {
 	if sql, ok := x.(*PostgreSQL); ok {
 		return PSQLQuery[T](sql)
@@ -199,6 +205,8 @@ type QuerySet[T any] interface {
 	Transaction(ctx context.Context) (QuerySet[T], error)
 }
 
+// NewArgs creates a new ordered map for storing named query arguments.
+// This is a convenience function for creating argument maps that can be passed to QuerySet.Args().
 func NewArgs() *orderedmap.OrderedMap[string, any] {
 	return orderedmap.New[string, any]()
 }

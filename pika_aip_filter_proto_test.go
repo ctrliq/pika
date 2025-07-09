@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -153,13 +153,13 @@ func TestComplete3AIP160(t *testing.T) {
 	qs = Q[protoModel4](psql)
 	_, err = qs.AIP160(filter, opts)
 	require.NotNil(t, err)
-	require.Equal(t, "identifier non_existent is not allowed", err.Error())
+	require.Equal(t, "identifier is not allowed: non_existent", err.Error())
 
 	filter = `bool = null`
 	qs = Q[protoModel4](psql)
 	_, err = qs.AIP160(filter, opts)
 	require.NotNil(t, err)
-	require.Equal(t, "type NULL is not accepted for identifier bool", err.Error())
+	require.Equal(t, "type is not accepted for identifier: NULL for identifier bool", err.Error())
 
 	filter = `status = 0`
 	qs = Q[protoModel4](psql)
@@ -192,13 +192,13 @@ func TestComplete3AIP160(t *testing.T) {
 	qs = Q[protoModel4](psql)
 	_, err = qs.AIP160(filter, opts)
 	require.NotNil(t, err)
-	require.Equal(t, "type STRING is not accepted for identifier status", err.Error())
+	require.Equal(t, "type is not accepted for identifier: STRING for identifier status", err.Error())
 
 	filter = `status = 99`
 	qs = Q[protoModel4](psql)
 	_, err = qs.AIP160(filter, opts)
 	require.NotNil(t, err)
-	require.Equal(t, "value 99 is not accepted for identifier status", err.Error())
+	require.Equal(t, "value is not accepted for identifier: 99 for identifier status", err.Error())
 }
 
 func TestComplete3Exclude(t *testing.T) {
@@ -224,7 +224,7 @@ func TestComplete3Exclude(t *testing.T) {
 	qs = Q[protoModel4](psql)
 	_, err = qs.AIP160(filter, opts)
 	require.NotNil(t, err)
-	require.Equal(t, "identifier nullable_int is not allowed", err.Error())
+	require.Equal(t, "identifier is not allowed: nullable_int", err.Error())
 }
 
 func TestMultipleSameFieldOr(t *testing.T) {

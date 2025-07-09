@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -20,6 +20,24 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const (
+	// expectedFieldParts represents the expected number of parts when splitting a field name by dot
+	expectedFieldParts = 2
+	// maxHintParts represents the maximum number of hint parts in a filter key
+	maxHintParts = 2
+)
+
+// Static errors for err113 compliance
+var (
+	ErrTooManyArguments = errors.New("too many arguments (count should be one pointer or none)")
+	ErrPageSizeNegative = errors.New("page size cannot be negative")
+	ErrCountNegative    = errors.New("count cannot be negative")
+	ErrMissingArgument  = errors.New("missing argument")
+	ErrInvalidOperator  = errors.New("invalid operator")
+	ErrInvalidKey       = errors.New("invalid key")
+	ErrBothModelsNil    = errors.New("modelFirst and modelSecond are all nil, this is not allowed")
+)
+
 // Queryable includes all methods shared by sqlx.DB and sqlx.Tx, allowing
 // either type to be used interchangeably.
 //
@@ -31,13 +49,13 @@ type Queryable interface {
 	sqlx.QueryerContext
 	sqlx.Preparer
 
-	GetContext(context.Context, interface{}, string, ...interface{}) error
-	MustExecContext(context.Context, string, ...interface{}) sql.Result
-	NamedExecContext(context.Context, string, interface{}) (sql.Result, error)
-	PrepareNamedContext(context.Context, string) (*sqlx.NamedStmt, error)
-	PreparexContext(context.Context, string) (*sqlx.Stmt, error)
-	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
-	SelectContext(context.Context, interface{}, string, ...interface{}) error
+	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+	MustExecContext(ctx context.Context, query string, args ...interface{}) sql.Result
+	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
+	PrepareNamedContext(ctx context.Context, query string) (*sqlx.NamedStmt, error)
+	PreparexContext(ctx context.Context, query string) (*sqlx.Stmt, error)
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 }
 
 var (
@@ -45,8 +63,11 @@ var (
 	_ Queryable = (*sqlx.Tx)(nil)
 )
 
+// PostgreSQL represents a PostgreSQL database connection with transaction support.
+// It wraps sqlx.DB for regular database operations and sqlx.Tx for transactional operations.
 type PostgreSQL struct {
 	*connBase
+
 	db *sqlx.DB
 	tx *sqlx.Tx
 }
@@ -55,12 +76,14 @@ type basePsql[T any] struct {
 	*AIPFilter[T]
 	*PageToken[T]
 	*base
-	//nolint:structcheck // false positive
+
 	psql *PostgreSQL
 }
 
+// CreateOption represents options for database insert operations.
 type CreateOption byte
 
+// InsertOnConflictionDoNothing specifies that conflicts should be ignored during inserts.
 const InsertOnConflictionDoNothing CreateOption = 1 << iota
 
 // NewPostgreSQL returns a new PostgreSQL instance.
@@ -77,6 +100,7 @@ func NewPostgreSQL(connectionString string) (*PostgreSQL, error) {
 	}, nil
 }
 
+// NewPostgreSQLFromDB creates a new PostgreSQL instance from an existing sqlx.DB connection.
 func NewPostgreSQLFromDB(db *sqlx.DB) *PostgreSQL {
 	return &PostgreSQL{
 		connBase: &connBase{},
@@ -126,6 +150,7 @@ func (p *PostgreSQL) Rollback() error {
 	return nil
 }
 
+// Queryable returns the current queryable interface (either DB or transaction).
 func (p *PostgreSQL) Queryable() Queryable {
 	if p.tx != nil {
 		return p.tx
@@ -134,14 +159,19 @@ func (p *PostgreSQL) Queryable() Queryable {
 	return p.db
 }
 
+// DB returns the underlying sqlx.DB instance.
 func (p *PostgreSQL) DB() *sqlx.DB {
 	return p.db
 }
 
+// Close closes the database connection.
 func (p *PostgreSQL) Close() error {
 	return p.db.Close()
 }
 
+// PSQLQuery creates a new QuerySet for PostgreSQL database operations.
+// It initializes the query builder with metadata for the given type T and sets up
+// table name resolution based on model metadata or pluralized model names.
 func PSQLQuery[T any](p *PostgreSQL) QuerySet[T] {
 	b := &basePsql[T]{
 		AIPFilter: NewAIPFilter[T](),
@@ -402,7 +432,7 @@ func (b *basePsql[T]) Count(ctx context.Context) (int, error) {
 	filterStatement, args := b.queryWithFilters()
 	preSelect := b.psqlSelectList(b.excludeColumns, b.includeColumns, false)
 	// Strip preSelect from filterStatement
-	filterStatement = strings.Replace(filterStatement, preSelect, "", -1)
+	filterStatement = strings.ReplaceAll(filterStatement, preSelect, "")
 	b.ignoreLimit = origIgnoreLimit
 	b.ignoreOffset = origIgnoreOffset
 	b.ignoreOrderBy = origIgnoreOrderBy
@@ -489,7 +519,7 @@ func (b *basePsql[T]) DeleteQuery() (string, []interface{}) {
 	modelName := b.metadata[pikaMetadataModelName]
 
 	filterStatement, args := b.filterStatement()
-	filterStatement = strings.Replace(filterStatement, fmt.Sprintf("\"%s\".", modelName), "", -1)
+	filterStatement = strings.ReplaceAll(filterStatement, fmt.Sprintf("\"%s\".", modelName), "")
 
 	q := fmt.Sprintf("DELETE FROM \"%s\"", b.metadata[PikaMetadataTableName])
 	q += filterStatement
@@ -536,7 +566,7 @@ func (b *basePsql[T]) AIP160(filter string, options AIPFilterOptions) (QuerySet[
 // Page tokens for gRPC
 func (b *basePsql[T]) GetPage(ctx context.Context, paginatable Paginatable, options AIPFilterOptions, countPointer ...*int) ([]*T, string, error) {
 	if len(countPointer) > 1 {
-		return nil, "", fmt.Errorf("too many arguments (count should be one pointer or none)")
+		return nil, "", ErrTooManyArguments
 	}
 
 	if b.err != nil {
@@ -545,7 +575,7 @@ func (b *basePsql[T]) GetPage(ctx context.Context, paginatable Paginatable, opti
 
 	// Only decode if token is not empty
 	if paginatable.GetPageToken() != "" {
-		err := b.PageToken.Decode(paginatable.GetPageToken())
+		err := b.Decode(paginatable.GetPageToken())
 		if err != nil {
 			return nil, "", err
 		}
@@ -554,7 +584,14 @@ func (b *basePsql[T]) GetPage(ctx context.Context, paginatable Paginatable, opti
 		b.PageToken.Offset = 0
 		b.PageToken.Filter = paginatable.GetFilter()
 		b.PageToken.OrderBy = paginatable.GetOrderBy()
-		b.PageToken.PageSize = uint(paginatable.GetPageSize())
+
+		// Validate page size to prevent integer overflow
+		pageSize := paginatable.GetPageSize()
+		if pageSize < 0 {
+			return nil, "", ErrPageSizeNegative
+		}
+		// Use proper bounds checking for int32 to uint conversion
+		b.PageSize = uint(pageSize)
 	}
 
 	qs, err := b.pageToken(b, options)
@@ -579,12 +616,18 @@ func (b *basePsql[T]) GetPage(ctx context.Context, paginatable Paginatable, opti
 		*countPointer[0] = count
 	}
 
+	// Validate count to prevent integer overflow
+	if count < 0 {
+		return nil, "", ErrCountNegative
+	}
+
 	// If no more results after this page, return empty page token
+	// Safe conversion since we've validated count >= 0
 	if b.PageToken.Offset >= uint(count) {
 		return result, "", nil
 	}
 
-	tk, err := b.PageToken.Encode()
+	tk, err := b.Encode()
 	if err != nil {
 		return nil, "", err
 	}
@@ -641,15 +684,13 @@ func (b *basePsql[T]) Include(includes ...string) QuerySet[T] {
 // Return args, used for reflection
 func (b *basePsql[T]) GetArgs() *orderedmap.OrderedMap[string, interface{}] {
 	return b.args
-}
-
-// Return current table and module name, used for reflection
+} // Return current table and module name, used for reflection
 func (b *basePsql[T]) GetModel() (string, string) {
 	var x T
 	modelName := reflect.TypeOf(x).Name()
 	tableName := modelName
 	ref := reflect.ValueOf(x)
-	for i := 0; i < ref.NumField(); i++ {
+	for i := range ref.NumField() {
 		field := ref.Type().Field(i)
 		if strings.Compare(field.Name, PikaMetadataTableName) == 0 {
 			tableName = field.Tag.Get("pika")
@@ -791,7 +832,7 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 						// If mapping found, replace with numbered parameter
 						v = fmt.Sprintf("$%d", mapping[noWildcard[1:]])
 					} else {
-						b.err = fmt.Errorf("missing argument: %s", noWildcard)
+						b.err = fmt.Errorf("%w: %s", ErrMissingArgument, noWildcard)
 						return "", nil
 					}
 				}
@@ -805,7 +846,7 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 				if strings.Contains(k, "__") {
 					parts := strings.Split(k, "__")
 					k = parts[0]
-					op := fmt.Sprintf("__%s", parts[1])
+					op := "__" + parts[1]
 
 					// IN requires the value wrapped in ANY
 					// as go-pika sends the value as a slice
@@ -856,12 +897,12 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 					if op == HintLike || op == HintNotLike || op == HintILike || op == HintNotILike {
 						// If a start wildcard was found, then add a prefix
 						if startWildcard {
-							v = fmt.Sprintf("'%%' || %s", v)
+							v = "'%' || " + v
 						}
 
 						// If an end wildcard was found, then add a suffix
 						if endWildcard {
-							v = fmt.Sprintf("%s || '%%'", v)
+							v = v + " || '%'"
 						}
 					}
 
@@ -872,8 +913,8 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 					}
 
 					extraHintOp := op
-					if len(parts) > 2 {
-						extraHintOp = fmt.Sprintf("__%s", parts[2])
+					if len(parts) > maxHintParts {
+						extraHintOp = "__" + parts[2]
 					}
 
 					// If AND then set andOr to AND regardless of filter.innerOr
@@ -905,7 +946,7 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 						var ok bool
 						operator, ok = operators[op]
 						if !ok {
-							b.err = fmt.Errorf("invalid operator: %s", operator)
+							b.err = fmt.Errorf("%w: %s", ErrInvalidOperator, operator)
 							return "", nil
 						}
 					}
@@ -918,8 +959,8 @@ func (b *basePsql[T]) filterStatement() (string, []any) {
 				if strings.Contains(clean, ".") {
 					// Split by dot, then join with quotes
 					parts := strings.Split(clean, ".")
-					if len(parts) != 2 {
-						b.err = fmt.Errorf("invalid key: %s", k)
+					if len(parts) != expectedFieldParts {
+						b.err = fmt.Errorf("%w: %s", ErrInvalidKey, k)
 						return "", nil
 					}
 					finalK = fmt.Sprintf("\"%s\".\"%s\"", parts[0], parts[1])
@@ -1048,7 +1089,7 @@ func (b *basePsql[T]) psqlSelectList(excludeColumns []string, includeColumns []s
 	columns := make([]column, 0, ref.NumField())
 
 	// Iterate through fields to get tags
-	for i := 0; i < ref.NumField(); i++ {
+	for i := range ref.NumField() {
 		field := ref.Type().Field(i)
 		tag := field.Tag.Get("db")
 		// By default, pikaTag = tag
@@ -1091,8 +1132,8 @@ func (b *basePsql[T]) psqlSelectList(excludeColumns []string, includeColumns []s
 	var selectColumns []string
 	for _, column := range columns {
 		if column.pika != "" {
-			values := strings.SplitN(column.pika, ".", 2)
-			if len(values) == 2 {
+			values := strings.SplitN(column.pika, ".", expectedFieldParts)
+			if len(values) == expectedFieldParts {
 				if val, ok := b.replaceFields[values[0]]; ok {
 					// Need to replace fields from other tables with associated model prefixs
 					// These fields are defined in the current model, but their values are from other tables
@@ -1113,7 +1154,7 @@ func (b *basePsql[T]) psqlSelectList(excludeColumns []string, includeColumns []s
 		return strings.Join(selectColumns, ", ")
 	}
 
-	selectStr := fmt.Sprintf("SELECT %s", strings.Join(selectColumns, ", "))
+	selectStr := "SELECT " + strings.Join(selectColumns, ", ")
 
 	q := fmt.Sprintf("%s %s", selectStr, strings.Join(fromStrs, ","))
 	return q
@@ -1148,7 +1189,7 @@ func (b *basePsql[T]) psqlCreateQuery(value *T, options ...CreateOption) (string
 
 	// Iterate through fields to get tags
 	xi := 0
-	for i := 0; i < ref.Elem().NumField(); i++ {
+	for i := range ref.Elem().NumField() {
 		field := ref.Elem().Type().Field(i)
 		tag := field.Tag.Get("db")
 		// Ignore "-" tags (or empty tags)
@@ -1186,7 +1227,7 @@ func (b *basePsql[T]) psqlCreateQuery(value *T, options ...CreateOption) (string
 	selectList := b.psqlSelectList(b.excludeColumns, b.includeColumns, true)
 	// Remove the model name prefix from the select list
 	// since we are inserting into the table
-	selectList = strings.Replace(selectList, fmt.Sprintf("\"%s\".", modelName), "", -1)
+	selectList = strings.ReplaceAll(selectList, fmt.Sprintf("\"%s\".", modelName), "")
 	conflict := ""
 
 	if InsertOnConflictionDoNothing&getOption(options...) != 0 {
@@ -1196,7 +1237,7 @@ func (b *basePsql[T]) psqlCreateQuery(value *T, options ...CreateOption) (string
 
 	// Convert value to arguments
 	args := make([]interface{}, 0, ref.Elem().NumField())
-	for i := 0; i < ref.Elem().NumField(); i++ {
+	for i := range ref.Elem().NumField() {
 		field := ref.Elem().Type().Field(i)
 		tag := fmt.Sprintf("\"%s\"", field.Tag.Get("db"))
 
@@ -1224,7 +1265,7 @@ func (b *basePsql[T]) psqlUpdateQuery(value *T) (string, []any) {
 
 	// Iterate through fields to get tags
 	xi := 0
-	for i := 0; i < ref.Elem().NumField(); i++ {
+	for i := range ref.Elem().NumField() {
 		field := ref.Elem().Type().Field(i)
 		tag := field.Tag.Get("db")
 		// Ignore "-" tags (or empty tags)
@@ -1270,7 +1311,7 @@ func (b *basePsql[T]) psqlUpdateQuery(value *T) (string, []any) {
 	selectList := b.psqlSelectList(b.excludeColumns, b.includeColumns, true)
 	// Remove the model name prefix from the select list
 	// since we are inserting into the table
-	selectList = strings.Replace(selectList, fmt.Sprintf("\"%s\".", modelName), "", -1)
+	selectList = strings.ReplaceAll(selectList, fmt.Sprintf("\"%s\".", modelName), "")
 	q := fmt.Sprintf("UPDATE \"%s\" SET ", tableName)
 
 	// Add columns to update
@@ -1282,11 +1323,11 @@ func (b *basePsql[T]) psqlUpdateQuery(value *T) (string, []any) {
 	}
 
 	// Add where clause
-	filterStatement = strings.Replace(filterStatement, fmt.Sprintf("\"%s\".", modelName), "", -1)
+	filterStatement = strings.ReplaceAll(filterStatement, fmt.Sprintf("\"%s\".", modelName), "")
 	q += fmt.Sprintf("%s RETURNING %s", filterStatement, selectList)
 
 	// Convert value to arguments
-	for i := 0; i < ref.Elem().NumField(); i++ {
+	for i := range ref.Elem().NumField() {
 		field := ref.Elem().Type().Field(i)
 		tag := fmt.Sprintf("\"%s\"", field.Tag.Get("db"))
 
@@ -1318,7 +1359,7 @@ func (b *basePsql[T]) commonJoin(joinType string, modelFirst, modelSecond interf
 	}
 
 	if modelFirst == nil && modelSecond == nil {
-		b.err = fmt.Errorf("modelFirst and modelSecond are all nil, this is not allowed")
+		b.err = ErrBothModelsNil
 		return b
 	}
 
@@ -1390,7 +1431,7 @@ func getQuerySetInfo(val interface{}) (string, string) {
 		mname := reflect.TypeOf(val).Name()
 		tname := mname
 		ref := reflect.ValueOf(val)
-		for i := 0; i < ref.NumField(); i++ {
+		for i := range ref.NumField() {
 			field := ref.Type().Field(i)
 			if strings.Compare(field.Name, PikaMetadataTableName) == 0 {
 				tname = field.Tag.Get("pika")
@@ -1413,15 +1454,13 @@ func isTarget(val interface{}) bool {
 }
 
 // Replace the old place holder with new ones
-//
-//nolint:predeclared
-func replacePlaceHolder(query string, old, new []int) string {
-	if len(old) != len(new) {
+func replacePlaceHolder(query string, old, newIdx []int) string {
+	if len(old) != len(newIdx) {
 		return query
 	}
 
 	for idx := range old {
-		query = strings.Replace(query, fmt.Sprintf("$%d", old[idx]), fmt.Sprintf("$%d", new[idx]), 1)
+		query = strings.Replace(query, fmt.Sprintf("$%d", old[idx]), fmt.Sprintf("$%d", newIdx[idx]), 1)
 	}
 
 	return query
@@ -1434,7 +1473,7 @@ func generateRangeSlice(start, length int) *[]int {
 	}
 
 	ret := make([]int, length)
-	for idx := 0; idx < length; idx++ {
+	for idx := range length {
 		ret[idx] = start + idx
 	}
 	return &ret
