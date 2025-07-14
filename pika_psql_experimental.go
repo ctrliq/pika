@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -7,6 +7,13 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+
+	"github.com/pkg/errors"
+)
+
+// Static errors for err113 compliance
+var (
+	ErrIDNotFound = errors.New("id not found")
 )
 
 func (b *basePsql[T]) findID(x *T) any {
@@ -45,7 +52,7 @@ func (b *basePsql[T]) F(keyval ...any) QuerySet[T] {
 func (b *basePsql[T]) D(ctx context.Context, x *T) error {
 	id := b.findID(x)
 	if id == nil {
-		return fmt.Errorf("id not found")
+		return ErrIDNotFound
 	}
 
 	qs := b.F("id", id)
@@ -65,7 +72,7 @@ func (b *basePsql[T]) Transaction(ctx context.Context) (QuerySet[T], error) {
 func (b *basePsql[T]) U(ctx context.Context, x *T) error {
 	id := b.findID(x)
 	if id == nil {
-		return fmt.Errorf("id not found")
+		return ErrIDNotFound
 	}
 
 	qs := b.F("id", id)

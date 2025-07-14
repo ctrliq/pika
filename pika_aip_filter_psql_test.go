@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -76,7 +76,7 @@ func TestAIP160SimpleEqualsAcceptableIdentifier(t *testing.T) {
 		AcceptableIdentifiers: []string{"non_nullable"},
 	})
 	require.NotNil(t, err)
-	require.EqualError(t, err, "identifier invalid is not allowed")
+	require.EqualError(t, err, "identifier is not allowed: invalid")
 }
 
 func TestAIP160EqualsAndNull(t *testing.T) {

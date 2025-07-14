@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -9,11 +9,24 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"go.ciq.dev/pika/parser"
 )
 
+const (
+	// expectedQueryParts represents the expected number of parts when splitting a query by '='
+	expectedQueryParts = 2
+)
+
+// Static errors for err113 compliance
+var (
+	ErrInvalidFilter                = errors.New("invalid filter")
+	ErrFilterKeyContainsExclamation = errors.New("filter key contains exclamation mark")
+)
+
+//nolint:revive
 var (
 	logger                *logrus.Logger
 	pikaMetadataModelName = "PikaMetadataModelName"
@@ -171,7 +184,6 @@ type pikaFiltering struct {
 	innerOr bool
 }
 
-//nolint:structcheck
 type base struct {
 	filters        []pikaFiltering
 	args           *orderedmap.OrderedMap[string, interface{}]
@@ -233,12 +245,12 @@ func (b *base) filter(innerOr bool, or bool, queries ...string) {
 	newFilters := orderedmap.New[string, string]()
 	for _, query := range queries {
 		split := strings.Split(query, "=")
-		if len(split) != 2 {
-			b.err = fmt.Errorf("invalid filter: %s", query)
+		if len(split) != expectedQueryParts {
+			b.err = fmt.Errorf("%w: %s", ErrInvalidFilter, query)
 			break
 		}
 		if strings.Contains(split[0], "!") {
-			b.err = fmt.Errorf("filter key contains exclamation mark: %s", query)
+			b.err = fmt.Errorf("%w: %s", ErrFilterKeyContainsExclamation, query)
 			break
 		}
 		newFilters.Set(findEmptyForKey(split[0], newFilters), split[1])
@@ -283,7 +295,7 @@ func (c *connBase) TableAlias(src string, dst string) {
 		c.tableAlias = make(map[string]string)
 	}
 	if _, ok := c.tableAlias[src]; ok {
-		panic(fmt.Sprintf("duplicate table alias: %s", src))
+		panic("duplicate table alias: " + src)
 	}
 	c.tableAlias[src] = dst
 }
@@ -300,7 +312,7 @@ func getPikaMetadata[T any]() map[string]string {
 	metadata[pikaMetadataModelName] = modelName
 
 	// Iterate through fields to get tags
-	for i := 0; i < ref.NumField(); i++ {
+	for i := range ref.NumField() {
 		field := ref.Type().Field(i)
 
 		// We only care about fields starting with "Pika"
@@ -309,7 +321,7 @@ func getPikaMetadata[T any]() map[string]string {
 				tag := field.Tag.Get("pika")
 
 				if _, ok := metadata[field.Name]; ok {
-					panic(fmt.Sprintf("duplicate Pika metadata field: %s", field.Name))
+					panic("duplicate Pika metadata field: " + field.Name)
 				}
 				metadata[field.Name] = tag
 			}
@@ -323,7 +335,7 @@ func getPikaMetadata[T any]() map[string]string {
 		}
 
 		if _, ok := metadata[field.Name]; ok {
-			panic(fmt.Sprintf("duplicate Pika database field: %s", field.Name))
+			panic("duplicate Pika database field: " + field.Name)
 		}
 
 		metadata[tag] = field.Type.String()

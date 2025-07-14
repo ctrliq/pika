@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -7,8 +7,27 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
+
+	"github.com/pkg/errors"
 )
 
+const (
+	// MaxPageSize represents the maximum allowed page size for pagination
+	MaxPageSize = 100
+)
+
+// Static errors for err113 compliance
+var (
+	ErrPageTokenDecode       = errors.New("failed to decode page token, make sure it is from a previous request")
+	ErrPageSizeTooSmall      = errors.New("page size cannot be less than 1")
+	ErrPageSizeTooLarge      = errors.New("page size cannot be greater than 100")
+	ErrOffsetTooLarge        = errors.New("offset value too large")
+	ErrPageSizeValueTooLarge = errors.New("page size value too large")
+)
+
+// PageToken represents a pagination token that encodes the current state of pagination
+// including offset, filter, ordering, and page size information.
 type PageToken[T any] struct {
 	QuerySet[T] `json:"-"`
 
@@ -18,6 +37,8 @@ type PageToken[T any] struct {
 	PageSize uint   `json:"page_size"`
 }
 
+// Paginatable is an interface that defines the methods required for pagination support.
+// Types implementing this interface can be used with pagination functionality.
 type Paginatable interface {
 	GetFilter() string
 	GetOrderBy() string
@@ -25,6 +46,7 @@ type Paginatable interface {
 	GetPageToken() string
 }
 
+// PageRequest represents a request for paginated data with filtering and ordering options.
 type PageRequest struct {
 	// Filter is a filter expression that restricts the results to return.
 	Filter string
@@ -39,6 +61,7 @@ type PageRequest struct {
 	PageToken string
 }
 
+// NewPageToken creates a new PageToken instance for the given type T.
 func NewPageToken[T any]() *PageToken[T] {
 	return &PageToken[T]{}
 }
@@ -61,7 +84,7 @@ func (p *PageToken[T]) Encode() (string, error) {
 func (p *PageToken[T]) Decode(s string) error {
 	data, err := base64.URLEncoding.DecodeString(s)
 	if err != nil {
-		return fmt.Errorf("failed to decode page token, make sure it is from a previous request")
+		return ErrPageTokenDecode
 	}
 	return json.Unmarshal(data, p)
 }
@@ -82,12 +105,22 @@ func (p *PageToken[T]) pageToken(b QuerySet[T], options AIPFilterOptions) (Query
 
 	// Return error if page size is less than 1
 	if p.PageSize < 1 {
-		return nil, fmt.Errorf("page size cannot be less than 1")
+		return nil, ErrPageSizeTooSmall
 	}
 
 	// Return error if page size is greater than 100
-	if p.PageSize > 100 {
-		return nil, fmt.Errorf("page size cannot be greater than 100")
+	if p.PageSize > MaxPageSize {
+		return nil, ErrPageSizeTooLarge
+	}
+
+	// Check for potential integer overflow when converting uint to int
+	if p.Offset > math.MaxInt {
+		return nil, ErrOffsetTooLarge
+	}
+
+	// Check for potential integer overflow when converting PageSize uint to int
+	if p.PageSize > math.MaxInt {
+		return nil, ErrPageSizeValueTooLarge
 	}
 
 	b.Offset(int(p.Offset))
@@ -103,18 +136,22 @@ func (p *PageToken[T]) pageToken(b QuerySet[T], options AIPFilterOptions) (Query
 	return b, nil
 }
 
+// GetFilter returns the filter expression for the page request.
 func (p *PageRequest) GetFilter() string {
 	return p.Filter
 }
 
+// GetOrderBy returns the order by expression for the page request.
 func (p *PageRequest) GetOrderBy() string {
 	return p.OrderBy
 }
 
+// GetPageSize returns the maximum number of results to return for the page request.
 func (p *PageRequest) GetPageSize() int32 {
 	return p.PageSize
 }
 
+// GetPageToken returns the page token for the next request.
 func (p *PageRequest) GetPageToken() string {
 	return p.PageToken
 }

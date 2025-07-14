@@ -1,6 +1,8 @@
 module go.ciq.dev/pika
 
-go 1.20
+go 1.22
+
+toolchain go1.24.4
 
 require (
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df
@@ -13,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	github.com/wk8/go-ordered-map/v2 v2.1.8
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.36.6
 )
 
 require (

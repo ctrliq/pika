@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2024, Ctrl IQ, Inc. All rights reserved
+// SPDX-FileCopyrightText: Copyright (c) 2023-2025, CTRL IQ, Inc. All rights reserved
 // SPDX-License-Identifier: Apache-2.0
 
 package pika
@@ -18,6 +18,21 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Static errors for err113 compliance
+var (
+	ErrInvalidSuffix                 = errors.New("invalid suffix for identifier")
+	ErrIdentifierNotAcceptable       = errors.New("identifier is not acceptable")
+	ErrNestedExpressionsNotSupported = errors.New("nested expressions are not supported")
+	ErrCannotCombineMultipleValues   = errors.New("cannot combine multiple values in subexpression")
+	ErrUnknownAliasType              = errors.New("unknown alias type")
+	ErrTypeNotAccepted               = errors.New("type is not accepted for identifier")
+	ErrValueNotAccepted              = errors.New("value is not accepted for identifier")
+	ErrUnexpectedIdentifier          = errors.New("unexpected identifier")
+	ErrMissingOperator               = errors.New("missing operator")
+	ErrMissingIdentifier             = errors.New("missing identifier")
+	ErrIdentifierNotAllowed          = errors.New("identifier is not allowed")
+)
+
 // The goal of this AIP Filter extension is to be able to parse
 // grammar like the one used in AIP-160.
 // This extension uses Antlr generated parser to parse the
@@ -27,10 +42,15 @@ import (
 // The filters on the QuerySet are applied in the order they are
 // given.
 
+// AIPFilter provides AIP-160 compliant filtering capabilities for database queries.
+// It uses ANTLR-generated parsers to parse filter expressions and converts them
+// into QuerySet operations that can be applied to database queries.
 type AIPFilter[T any] struct {
 	QuerySet[T]
 }
 
+// AIPFilterIdentifier configures how a specific identifier (field) should be handled
+// during AIP-160 filter parsing, including type validation, value aliases, and column mapping.
 type AIPFilterIdentifier struct {
 	// Value aliases are used to map a value to a different value.
 	// Mostly useful for enums, where for example the values
@@ -60,6 +80,8 @@ type AIPFilterIdentifier struct {
 	IsRepeated bool
 }
 
+// AIPFilterOptions provides configuration for AIP-160 filter parsing,
+// including identifier validation, type checking, and field mapping.
 type AIPFilterOptions struct {
 	// Identifiers are additional configuration for specific identifiers.
 	Identifiers map[string]AIPFilterIdentifier
@@ -86,13 +108,15 @@ func (a AIPFilterOptions) verifyOrderBy(orderBy string) ([]string, error) {
 		idents := strings.Split(fullIdentifier, " ")
 		identifier := idents[0]
 		sort := "asc"
+
 		if len(idents) > 1 {
 			sort = strings.ToLower(idents[1])
 			// Check if the suffix is valid
 			if sort != "asc" && sort != "desc" {
-				return nil, fmt.Errorf("invalid suffix %s for identifier %s", sort, identifier)
+				return nil, fmt.Errorf("%w: %s for identifier %s", ErrInvalidSuffix, sort, identifier)
 			}
 		}
+
 		prefix := ""
 		if sort == "desc" {
 			prefix = "-"
@@ -100,7 +124,7 @@ func (a AIPFilterOptions) verifyOrderBy(orderBy string) ([]string, error) {
 
 		// Verify that the identifier is acceptable
 		if !contains(a.AcceptableIdentifiers, identifier) {
-			return nil, fmt.Errorf("identifier %s is not acceptable", identifier)
+			return nil, fmt.Errorf("%w: %s", ErrIdentifierNotAcceptable, identifier)
 		}
 
 		// Check if column name is defined
@@ -116,6 +140,7 @@ func (a AIPFilterOptions) verifyOrderBy(orderBy string) ([]string, error) {
 	return newOrderBy, nil
 }
 
+// NewAIPFilter creates a new AIPFilter instance for the given type T.
 func NewAIPFilter[T any]() *AIPFilter[T] {
 	return &AIPFilter[T]{}
 }
@@ -144,6 +169,7 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 	if options.Identifiers == nil {
 		options.Identifiers = map[string]AIPFilterIdentifier{}
 	}
+
 	for identifier, opts := range options.Identifiers {
 		// Verify that accepted types is in antlrValues
 		for _, acceptedType := range opts.AcceptedTypes {
@@ -176,6 +202,7 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 			args:          orderedmap.New[string, any](),
 		},
 	}
+
 	i := 0
 	for {
 		activeState := states[i]
@@ -190,6 +217,7 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 				activeState.filterContent = append(activeState.filterContent, activeState.activeExpr)
 				activeState.activeExpr = nil
 			}
+
 			break
 		}
 
@@ -204,12 +232,12 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 			// We currently don't support nested expressions like this
 			// (a = 1 AND (b = 2 OR c = 3))
 			if !activeState.initParens && activeState.activeParens {
-				return nil, fmt.Errorf("nested expressions are not supported")
+				return nil, fmt.Errorf("%w", ErrNestedExpressionsNotSupported)
 			}
 
 			// Disallow combined expression for values
 			if activeState.activeIdentifier != "" {
-				return nil, fmt.Errorf("cannot combine multiple values in subexpression")
+				return nil, fmt.Errorf("%w", ErrCannotCombineMultipleValues)
 			}
 
 			if activeState.activeParens && !activeState.initParens {
@@ -228,32 +256,41 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 				activeState.initParens = false
 				activeState.forceNot = activeState.activeNot
 			}
+
 			continue
+
 		// Right parenthesis.
 		// Closing previous parenthesis.
 		case parser.FilterLexerRPAREN:
 			activeState.activeParens = false
+
 		// If whitespace, ignore.
 		case parser.FilterLexerWHITESPACE:
 			continue
+
 		// If OR, enable OR mode.
 		case parser.FilterLexerOR:
 			// If it's already active, we need to add a hint to force innerOr
 			// If activeOr is true, we need to add a hint instead
 			activeState.activeOperator += HintOr
 			activeState.activeOr = true
+
 			continue
+
 		// If AND, disable OR mode.
 		case parser.FilterLexerAND:
 			// We support multiple hints, since AND is default, we just
 			// need to force it if OR is activated
 			activeState.activeOr = false
 			activeState.activeOperator += HintAnd
+
 			continue
+
 		// If NOT, enable NOT mode.
 		case parser.FilterLexerNOT,
 			parser.FilterLexerMINUS:
 			activeState.activeNot = true
+
 			continue
 		}
 
@@ -274,6 +311,7 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 				// If operator, set the current operator.
 				newVal := fmt.Sprintf("%s%s", x, activeState.activeOperator)
 				activeState.activeOperator = newVal
+
 				continue
 			}
 		} else {
@@ -408,7 +446,7 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 						// If alias is a uint64, we need to set the type to uint64
 						activeState.activeValueType = parser.FilterLexerNUM_UINT
 					} else {
-						return nil, fmt.Errorf("unknown alias type %T", alias)
+						return nil, fmt.Errorf("%w: %T", ErrUnknownAliasType, alias)
 					}
 				}
 
@@ -423,7 +461,7 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 						}
 					}
 					if !isOk {
-						return nil, fmt.Errorf("type %s is not accepted for identifier %s", lexer.SymbolicNames[activeState.activeValueType], activeState.activeIdentifier)
+						return nil, fmt.Errorf("%w: %s for identifier %s", ErrTypeNotAccepted, lexer.SymbolicNames[activeState.activeValueType], activeState.activeIdentifier)
 					}
 				}
 
@@ -438,7 +476,7 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 						}
 					}
 					if !isOk {
-						return nil, fmt.Errorf("value %v is not accepted for identifier %s", activeState.activeValue, activeState.activeIdentifier)
+						return nil, fmt.Errorf("%w: %v for identifier %s", ErrValueNotAccepted, activeState.activeValue, activeState.activeIdentifier)
 					}
 				}
 			}
@@ -451,22 +489,22 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 				activeState.activeIdentifier = t.GetText()
 				continue
 			}
-			return nil, fmt.Errorf("unexpected identifier %s", t.GetText())
+			return nil, fmt.Errorf("%w: %s", ErrUnexpectedIdentifier, t.GetText())
 		}
 
 		if activeState.activeOperator != "" && activeState.activeIdentifier != "" && activeState.activeValue != nil {
 			operator := activeState.activeOperator
 			if operator == "" {
-				return nil, fmt.Errorf("missing operator")
+				return nil, fmt.Errorf("%w", ErrMissingOperator)
 			}
 			if activeState.activeIdentifier == "" {
-				return nil, fmt.Errorf("missing identifier")
+				return nil, fmt.Errorf("%w", ErrMissingIdentifier)
 			}
 
 			// Check if AcceptableIdentifiers are set, if so check if identifier is valid
 			if len(options.AcceptableIdentifiers) > 0 {
 				if !contains(options.AcceptableIdentifiers, activeState.activeIdentifier) {
-					return nil, fmt.Errorf("identifier %s is not allowed", activeState.activeIdentifier)
+					return nil, fmt.Errorf("%w: %s", ErrIdentifierNotAllowed, activeState.activeIdentifier)
 				}
 			}
 
@@ -505,7 +543,7 @@ func (a *AIPFilter[T]) aip160(b QuerySet[T], filter string, options AIPFilterOpt
 				suffix += strconv.Itoa(prefixCount)
 			}
 			argKey := fmt.Sprintf("%s%s", cleanKey(key), suffix)
-			value := fmt.Sprintf(":%s", argKey)
+			value := ":" + argKey
 
 			// For AIP-160 purposes, if the operator has HintILike, then we need to
 			// wrap the value in % to match wildcard
